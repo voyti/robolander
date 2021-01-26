@@ -2,7 +2,7 @@
   {{t('Land at 2 m/s or less!')}}
   <div class="telemetrics-panel">
     <p>{{t('CASH')}}: 1000$ | {{t('LANDER VALUE')}}: $1</p>
-    <p>{{t('V SPEED')}}: {{displayCumullativeDownward && displayCumullativeDownward.toFixed(2)}} m/s</p>
+    <p>{{t('V SPEED')}}: {{displayCumulativeDownward && displayCumulativeDownward.toFixed(2)}} m/s</p>
     <p>{{t('LANDER Y')}}: {{ (landY - (y + landerH)).toFixed(2) }} m</p>
     <p>{{ t('BURN') }}: {{ burn.toFixed(2) }}</p>
     <p>{{ t('DEBUG burn stack') }}: {{ burnStack }}</p>
@@ -49,12 +49,12 @@
   </div>
 
   <div class="win-text absolute-modal" *ngIf="hasWon">
-    {{t('GREAT JOB! Your landing speed was')}} {{landingSpeed.toFixed(2)}} m/s
+    {{t('GREAT JOB! Your landing speed was')}} {{landingSpeed}} m/s
     <div>
       <button (click)="reset()">Restart</button>
     </div>
   </div>
-  <div class="lose-text absolute-modal" *ngIf="hasLost">{{t('Didn\'t make it this time! Your landing speed was')}} {{landingSpeed.toFixed(2)}} m/s, it needs to be less than 2 m/s
+  <div class="lose-text absolute-modal" *ngIf="hasLost">{{t('Didn\'t make it this time! Your landing speed was')}} {{landingSpeed}} m/s, it needs to be less than 2 m/s
     <div>
       <button (click)="reset()">Restart</button>
     </div>

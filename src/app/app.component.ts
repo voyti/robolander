@@ -17,10 +17,11 @@ const HEIGHT = 1000;
 
 const LANDER_W = 30;
 const LANDER_H = 50;
+const STRUT_H = 10;
 
 const BURN_BASE_VALUE = 0.05;
-const MIN_SAFE_CUM_DOWNWARD = 2;
-const MIN_SAFE_CUM_DOWNWARD_PRECEDE = 1; // add acceptable speed when extending struts
+const MIN_SAFE_CUMUL_DOWNWARD = 2;
+const MIN_SAFE_CUMUL_DOWNWARD_PRECEDE = 1; // add acceptable speed when extending struts
 const LANDING_MIN_ADD_H = 50;
 
 
@@ -44,8 +45,8 @@ export class AppComponent implements OnInit {
   lander: PIXI.Graphics;
   upcomingReleaseOfSpontaneusEnergy: any;
   land: PIXI.Graphics;
-  cumullativeDownward: number = 0;
-  displayCumullativeDownward: number = 0;
+  cumulativeDownward: number = 0;
+  displayCumulativeDownward: number = 0;
   landerGroup: PIXI.Container;
   landerFlame: PIXI.Graphics;
   pendingBurn: number = 0;
@@ -59,10 +60,10 @@ export class AppComponent implements OnInit {
   operators: string[];
   error: string;
   helperLines: PIXI.Graphics;
-  MIN_SAFE_CUM_DOWNWARD: number;
+  MIN_SAFE_CUMUL_DOWNWARD: number;
   landingStruts: PIXI.Graphics;
   hasWon: boolean;
-  landingSpeed: number;
+  landingSpeed: string;
   hasLost: boolean;
   landerH: number;
 
@@ -237,12 +238,12 @@ if (${rule.conditionVariable} ${rule.operator} ${rule.conditionValue}) {
   }
 
   performMovement() {
-    this.y = this.y + this.cumullativeDownward;
+    this.y = this.y + this.cumulativeDownward;
   }
 
   registerGravityInfluence() {
-    this.cumullativeDownward =
-      this.cumullativeDownward + PLANET_ACCEL * PX_TO_M * (LOOP_PERIOD / 1000);
+    this.cumulativeDownward =
+      this.cumulativeDownward + PLANET_ACCEL * PX_TO_M * (LOOP_PERIOD / 1000);
   }
 
   applyBurnStack() {
@@ -255,22 +256,30 @@ if (${rule.conditionVariable} ${rule.operator} ${rule.conditionValue}) {
 
   applyBurnForce() {
     this.burn = BURN_BASE_VALUE * this.burnStack;
-    this.cumullativeDownward -= this.burn;
+    this.cumulativeDownward -= this.burn;
   }
 
   initGameLoop() {
     let loopCount = 0;
 
     setInterval(() => {
-      if (this.hasLost) return null;
+      if (this.hasWon) this.postWin();
+      if (this.hasLost || this.hasWon) return null;
 
       this.checkAndApplyRules();
       this.registerGravityInfluence(); // friction
-      if ((this.y + LANDER_H) >= (LAND_Y - LANDING_MIN_ADD_H)  && this.cumullativeDownward <= (MIN_SAFE_CUM_DOWNWARD + MIN_SAFE_CUM_DOWNWARD_PRECEDE)) {
+
+      if ((this.y + LANDER_H) >= (LAND_Y - LANDING_MIN_ADD_H)  && this.cumulativeDownward <= (MIN_SAFE_CUMUL_DOWNWARD + MIN_SAFE_CUMUL_DOWNWARD_PRECEDE)) {
         this.drawingService.drawStruts(this.landingStruts, LANDER_W, LANDER_H);
       }
-      if ((this.y + LANDER_H) >= LAND_Y && this.cumullativeDownward <= MIN_SAFE_CUM_DOWNWARD) this.win();
-      if ((this.y + LANDER_H) >= LAND_Y) this.lose();
+
+      if ((this.y + LANDER_H) >= LAND_Y && this.cumulativeDownward <= MIN_SAFE_CUMUL_DOWNWARD) {
+        this.win();
+      }
+
+      if ((this.y + LANDER_H) >= LAND_Y && !this.hasWon) {
+        this.lose();
+      }
 
       if (this.pendingBurn) {
         this.applyBurnStack();
@@ -288,18 +297,14 @@ if (${rule.conditionVariable} ${rule.operator} ${rule.conditionValue}) {
       this.drawingService.redrawLander(this.lander, LANDER_W, LANDER_H);
 
       this.landerGroup.position.x = this.x;
-      if (this.hasWon) {
-        this.landerGroup.position.y = LAND_Y;
-      } else {
-        this.landerGroup.position.y = this.y;
-      }
+      this.landerGroup.position.y = this.y;
 
       this.drawingService.redrawFlame(this.landerFlame, this.burn, LANDER_W, LANDER_H);
 
       loopCount++;
       if (loopCount % 10 === 0) {
-        this.displayCumullativeDownward = this.cumullativeDownward;
-        // console.warn(this.cumullativeDownward);
+        this.displayCumulativeDownward = this.cumulativeDownward;
+        // console.warn(this.cumulativeDownward);
       }
 
       if (this.hasWon) {
@@ -328,23 +333,29 @@ if (${rule.conditionVariable} ${rule.operator} ${rule.conditionValue}) {
 
   reset() {
     this.y = 0;
-    this.cumullativeDownward = 0;
+    this.cumulativeDownward = 0;
     this.burn = 0;
     this.burnStack = 0;
     this.hasWon = false;
     this.hasLost = false;
     this.drawingService.resetStruts(this.landingStruts);
-    this.landingSpeed = 0;
+    this.landingSpeed = '0';
   }
 
   lose() {
     this.hasLost = true;
-    this.landingSpeed = this.cumullativeDownward;
+    this.landingSpeed = this.cumulativeDownward.toFixed(2);
+  }
+
+  postWin() {
+    this.burn = 0;
+    this.drawingService.redrawFlame(this.landerFlame, 0, LANDER_W, LANDER_H);
+    this.landerGroup.position.y = LAND_Y - LANDER_H - STRUT_H;
   }
 
   win() {
     this.hasWon = true;
-    this.landingSpeed = this.cumullativeDownward;
+    this.landingSpeed = this.cumulativeDownward.toFixed(2);
   }
 
   t(wordOrSentence) {
